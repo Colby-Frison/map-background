@@ -1,5 +1,10 @@
-cache/8f642f6bd5f685a5617c2b5d615e36c968f41ddd.json
-cache/29b5c94b7025683cd96c751fdffbff8720e5fcda.json
-cache/448ccf664868e53125b992019e8c0e194ff9b661.json
-cache/a88474c42654d88176696aaff80bcf4ecb3edb33.json
-cache/ec52f9dc6ffc80b2a93b97493d7841503b539ad7.json
+# Cache files
+.cache/
+*.cache
+__pycache__/
+*.py[cod]
+
+# OS files
+.DS_Store
+Thumbs.db
+
