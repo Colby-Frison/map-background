@@ -6,6 +6,8 @@ The python program creates a black and grey map in a 16:9 aspect ratio of paris.
 
 The program takes quite a long time to execute because it interacts with an external source to pull the map info, it is also very high resolution, so it takes a while to render and crop.
 
+requirements.txt contains all dependencies for the program. run `pip install -r requirements.txt` to install them.
+
 ---
 
 At some point I will implement the following features:
