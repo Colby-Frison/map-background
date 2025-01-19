@@ -1,6 +1,6 @@
 # Map Background
 
---- 
+
 
 The python program creates a black and grey map in a 16:9 aspect ratio of paris. The location can be changed by inputing corrdinates of another place, but for right now it has a preset location
 
