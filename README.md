@@ -15,3 +15,7 @@ At some point I will implement the following features:
 - Range selection
 - DPI selection
 - Possibly a way to also highlight water features
+---
+example:
+![map](https://github.com/user-attachments/assets/3edd3adb-c42b-4dca-962a-c862ab57d572)
+
