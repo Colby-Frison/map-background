@@ -3,7 +3,7 @@ import contextily as cx
 from pyproj import Transformer
 import numpy as np
 import osmnx as ox
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 import os
 import glob
 from geopy.geocoders import Nominatim
@@ -61,13 +61,64 @@ def cleanup_cache():
     for file in glob.glob("*.cache"):
         os.remove(file)
 
-def display_map(location, radius, dpi, aspect_ratio, output_path):
+def add_location_text(image_path, location_name):
+    """
+    Add location name to the top right corner of the image.
+    
+    Args:
+        image_path (str): Path to the image
+        location_name (str): Name of the location to add
+    """
+    # Open the image
+    img = Image.open(image_path)
+    
+    # Create drawing object
+    draw = ImageDraw.Draw(img)
+    
+    # Load font from fonts directory
+    font_path = os.path.join('fonts', 'Ubuntu-Regular.ttf')
+    try:
+        font = ImageFont.truetype(font_path, 20)
+    except OSError:
+        print(f"Font not found at {font_path}, using default font")
+        font = ImageFont.load_default()
+    
+    # Calculate text size
+    text_bbox = draw.textbbox((0, 0), location_name, font=font)
+    text_width = text_bbox[2] - text_bbox[0]
+    
+    # Position text in top right with padding
+    padding = 25
+    position = (img.width - text_width - padding, padding)
+    
+    # Add text shadow for better visibility
+    shadow_offset = 2
+    shadow_color = 'black'
+    text_color = '#6f6f6f'
+    
+    # Draw text with shadow
+    draw.text((position[0] + shadow_offset, position[1] + shadow_offset), 
+              location_name, 
+              font=font, 
+              fill=shadow_color)
+    
+    # Draw main text
+    draw.text(position, location_name, font=font, fill=text_color)
+    
+    # Save the image
+    img.save(image_path)
+
+def display_map(location, radius, dpi, aspect_ratio, output_path, location_name):
     """
     Create and save a map with highlighted roads.
     
     Args:
         location (tuple): (latitude, longitude) coordinates
+        radius (float): radius in meters
+        dpi (int): dots per inch for the output image
+        aspect_ratio (float): desired aspect ratio
         output_path (str): Path where to save the output image
+        location_name (str): Name of the location to display
     """
     # Set figure properties for black background
     plt.style.use('dark_background')
@@ -112,6 +163,9 @@ def display_map(location, radius, dpi, aspect_ratio, output_path):
     # Crop the saved image to exact 16:9 ratio
     crop_to_16_9(output_path, aspect_ratio)
     
+    # Add location name to the image
+    add_location_text(output_path, location_name)
+    
     # Clean up cache files
     cleanup_cache()
 
@@ -122,6 +176,7 @@ def display_map(location, radius, dpi, aspect_ratio, output_path):
 location = input("Enter the city and country (e.g., 'Paris, France' or 'default'): ")
 if location == "default":
     coords = (37.9838, 23.7275)  # Athens, Greece
+    location_name = "Athens, Greece"  # Added country name
 else:
     try:
         # Initialize the geocoder
@@ -133,12 +188,15 @@ else:
         if location_data is None:
             print("Location not found. Using default coordinates (Athens, Greece)")
             coords = (37.9838, 23.7275)
+            location_name = "Athens, Greece"
         else:
             coords = (location_data.latitude, location_data.longitude)
+            location_name = location  # Use the full input string
             print(f"Coordinates found: {coords}")
     except GeocoderTimedOut:
         print("Geocoding service timed out. Using default coordinates (Athens, Greece)")
         coords = (37.9838, 23.7275)
+        location_name = "Athens, Greece"
 
 ## get radius
 radius = input("Enter the radius (in km): ")
@@ -161,5 +219,5 @@ if aspect_ratio == "default":
 else:
     aspect_ratio = float(aspect_ratio)
 
-display_map(coords, radius, dpi, aspect_ratio, 'map.png')
+display_map(coords, radius, dpi, aspect_ratio, 'map.png', location_name)
 
