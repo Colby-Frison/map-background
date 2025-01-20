@@ -78,7 +78,7 @@ def add_location_text(image_path, location_name):
     # Load font from fonts directory
     font_path = os.path.join('fonts', 'Ubuntu-Regular.ttf')
     try:
-        font = ImageFont.truetype(font_path, 20)
+        font = ImageFont.truetype(font_path, 16)
     except OSError:
         print(f"Font not found at {font_path}, using default font")
         font = ImageFont.load_default()
@@ -130,7 +130,7 @@ def display_map(location, radius, dpi, aspect_ratio, output_path, location_name)
     
     # Get the street network for a 10km radius
     lat, lon = location
-    G = ox.graph_from_point((lat, lon), dist=radius, network_type='drive')
+    G = ox.graph_from_point((lat, lon), dist=radius, network_type='all')
     
     # Plot the street network
     ox.plot_graph(G, ax=ax, 
@@ -173,30 +173,64 @@ def display_map(location, radius, dpi, aspect_ratio, output_path, location_name)
 # Get user inputs
 
 ## get location
-location = input("Enter the city and country (e.g., 'Paris, France' or 'default'): ")
+location = input("Enter location(City, Country || lat, lon): ")
 if location == "default":
     coords = (37.9838, 23.7275)  # Athens, Greece
-    location_name = "Athens, Greece"  # Added country name
+    location_name = "Athens, Greece"
 else:
+    # Check if input might be coordinates
     try:
-        # Initialize the geocoder
-        geolocator = Nominatim(user_agent="my_map_generator")
+        # Try to split and convert to float
+        lat, lon = map(float, location.replace(' ', '').split(','))
+        coords = (lat, lon)
         
-        # Get the location
-        location_data = geolocator.geocode(location)
+        # Get location name from coordinates
+        geolocator = Nominatim(user_agent="my_map_generator")
+        location_data = geolocator.reverse(coords, language='en')  # Force English results
         
         if location_data is None:
-            print("Location not found. Using default coordinates (Athens, Greece)")
+            print("Could not find location name for coordinates.")
+            location_name = input("Please enter the location name (City, Country): ")
+        else:
+            # Parse the address components
+            address = location_data.raw.get('address', {})
+            
+            # Try to get city or town
+            city = address.get('city')
+            town = address.get('town')
+            country = address.get('country')
+            
+            if city and country:
+                location_name = f"{city}, {country}"
+            elif town and country:
+                location_name = f"{town}, {country}"
+            else:
+                print("Could not determine city/town name from coordinates.")
+                location_name = input("Please enter the location name (City, Country): ")
+            
+            print(f"Location found: {location_name}")
+            
+    except ValueError:
+        # If not coordinates, treat as location name
+        try:
+            # Initialize the geocoder
+            geolocator = Nominatim(user_agent="my_map_generator")
+            
+            # Get the location
+            location_data = geolocator.geocode(location)
+            
+            if location_data is None:
+                print("Location not found. Using default coordinates (Athens, Greece)")
+                coords = (37.9838, 23.7275)
+                location_name = "Athens, Greece"
+            else:
+                coords = (location_data.latitude, location_data.longitude)
+                location_name = location  # Use the full input string
+                print(f"Coordinates found: {coords}")
+        except GeocoderTimedOut:
+            print("Geocoding service timed out. Using default coordinates (Athens, Greece)")
             coords = (37.9838, 23.7275)
             location_name = "Athens, Greece"
-        else:
-            coords = (location_data.latitude, location_data.longitude)
-            location_name = location  # Use the full input string
-            print(f"Coordinates found: {coords}")
-    except GeocoderTimedOut:
-        print("Geocoding service timed out. Using default coordinates (Athens, Greece)")
-        coords = (37.9838, 23.7275)
-        location_name = "Athens, Greece"
 
 ## get radius
 radius = input("Enter the radius (in km): ")
