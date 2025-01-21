@@ -149,22 +149,32 @@ def display_map(location, radius, dpi, aspect_ratio, output_path, location_name)
     # Ensure the figure background is black
     fig.patch.set_facecolor('black')
     
-    # Save the figure with exact dimensions and no padding
-    plt.savefig(output_path, 
-                dpi=750,
-                bbox_inches='tight',
-                pad_inches=0,
-                facecolor='black',
-                edgecolor='none')
+    # Save the figure with format-specific settings
+    if output_path.endswith('.svg'):
+        plt.savefig(output_path, 
+                   format='svg',
+                   bbox_inches='tight',
+                   pad_inches=0,
+                   facecolor='black',
+                   edgecolor='none')
+    else:
+        plt.savefig(output_path, 
+                   dpi=750,
+                   bbox_inches='tight',
+                   pad_inches=0,
+                   facecolor='black',
+                   edgecolor='none')
     
     # Clean up matplotlib
     plt.close()
     
-    # Crop the saved image to exact 16:9 ratio
-    crop_to_16_9(output_path, aspect_ratio)
-    
-    # Add location name to the image
-    add_location_text(output_path, location_name)
+    # Only process with PIL if it's a PNG file
+    if output_path.endswith('.png'):
+        # Crop the saved image to exact 16:9 ratio
+        crop_to_16_9(output_path, aspect_ratio)
+        
+        # Add location name to the image
+        add_location_text(output_path, location_name)
     
     # Clean up cache files
     cleanup_cache()
@@ -253,5 +263,16 @@ if aspect_ratio == "default":
 else:
     aspect_ratio = float(aspect_ratio)
 
-display_map(coords, radius, dpi, aspect_ratio, 'map.png', location_name)
+## get output format
+output_format = input("Enter the output format (png/svg): ")
+if output_format.lower() not in ['png', 'svg']:
+    print("Invalid format. Using default (png)")
+    output_format = 'png'
+else:
+    output_format = output_format.lower()
+
+# Create output filename with correct extension
+output_file = f'map.{output_format}'
+
+display_map(coords, radius, dpi, aspect_ratio, output_file, location_name)
 
