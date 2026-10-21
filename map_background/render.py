@@ -10,12 +10,12 @@ matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt
 import osmnx as ox
-import requests
 from matplotlib import patheffects
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
-from osmnx._errors import InsufficientResponseError, ResponseStatusCodeError
+from osmnx._errors import InsufficientResponseError
 
+from map_background.overpass import MapServerError, call_overpass
 from map_background.parse import framed_bounds, pixel_height
 from map_background.water import fetch_water, split_water
 
@@ -80,17 +80,18 @@ def render_map(
 
 
 def _street_graph(point: tuple[float, float], radius_m: float, network_type: str):
-    print(f"Downloading streets ({network_type}, {radius_m / 1000:g} km radius)...", flush=True)
+    description = f"Downloading streets ({network_type}, {radius_m / 1000:g} km radius)"
     try:
-        graph = ox.graph.graph_from_point(point, dist=radius_m, network_type=network_type)
+        graph = call_overpass(
+            lambda: ox.graph.graph_from_point(point, dist=radius_m, network_type=network_type),
+            description,
+        )
     except InsufficientResponseError as exc:
         raise MapError(
             "No streets found there. Try a larger radius or a different network type."
         ) from exc
-    except ResponseStatusCodeError as exc:
-        raise MapError(f"The map server returned an error: {exc}") from exc
-    except requests.RequestException as exc:
-        raise MapError("Could not reach the map server. Try again in a moment.") from exc
+    except MapServerError as exc:
+        raise MapError(str(exc)) from exc
     if graph.number_of_edges() == 0:
         raise MapError(
             "No streets found there. Try a larger radius or a different network type."
@@ -99,13 +100,10 @@ def _street_graph(point: tuple[float, float], radius_m: float, network_type: str
 
 
 def _water_features(point: tuple[float, float], radius_m: float, crs):
-    print("Downloading water...", flush=True)
     try:
-        features = fetch_water(point, radius_m)
-    except ResponseStatusCodeError as exc:
-        raise MapError(f"The map server returned an error: {exc}") from exc
-    except requests.RequestException as exc:
-        raise MapError("Could not reach the map server. Try again in a moment.") from exc
+        features = call_overpass(lambda: fetch_water(point, radius_m), "Downloading water")
+    except MapServerError as exc:
+        raise MapError(str(exc)) from exc
     if features is None:
         print("No water features in this area.", flush=True)
         return None

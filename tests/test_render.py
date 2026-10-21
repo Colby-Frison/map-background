@@ -100,7 +100,7 @@ def test_render_reports_unreachable_map_server(monkeypatch: pytest.MonkeyPatch) 
         raise requests.ConnectionError("down")
 
     monkeypatch.setattr("map_background.render.ox.graph.graph_from_point", fail)
-    with pytest.raises(MapError, match="Could not reach the map server"):
+    with pytest.raises(MapError, match="unavailable"):
         render_map(
             (37.98, 23.73),
             1000,

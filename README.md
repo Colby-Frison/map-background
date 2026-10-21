@@ -56,6 +56,6 @@ Example with custom colors:
 map-background --location "Venice, Italy" --street-color "#3a3a3a" --water-color "#163044"
 ```
 
-OSMnx keeps downloaded data in your user cache directory, so generating the same area again is faster.
+Map data comes from public Overpass servers. The main server (`overpass-api.de`) is often full, so a download tries [Private.coffee](https://overpass.private.coffee/) and the VK Maps server first, then the main server. A busy server is skipped immediately. A finished download is cached on your machine, so generating the same area again does not call a server.
 
 ![map](https://github.com/user-attachments/assets/3edd3adb-c42b-4dca-962a-c862ab57d572)
