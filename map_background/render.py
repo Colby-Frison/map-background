@@ -14,10 +14,11 @@ from matplotlib import patheffects
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from osmnx._errors import InsufficientResponseError
+from shapely.geometry import box
 
 from map_background.overpass import MapServerError, call_overpass
 from map_background.parse import framed_bounds, pixel_height
-from map_background.water import fetch_water, split_water
+from map_background.water import fetch_water, prepare_water
 
 SAVE_DPI = 100
 WATER_LINE_WIDTH = 0.8
@@ -55,8 +56,9 @@ def render_map(
         frameon=False,
     )
     axes.set_facecolor(background)
+    areas, lines = prepare_water(water, _clip_polygon(graph))
     try:
-        _draw_water(axes, water, water_color)
+        _draw_water(axes, areas, lines, water_color)
         ox.plot.plot_graph(
             graph,
             ax=axes,
@@ -110,13 +112,18 @@ def _water_features(point: tuple[float, float], radius_m: float, crs):
     return ox.projection.project_gdf(features, to_crs=crs)
 
 
-def _draw_water(axes: Axes, features, water_color: str) -> None:
-    if features is None:
-        return
-    polygons, lines = split_water(features)
-    if not polygons.empty:
-        polygons.plot(ax=axes, facecolor=water_color, edgecolor="none", zorder=0)
-    if not lines.empty:
+def _clip_polygon(graph):
+    edges = ox.convert.graph_to_gdfs(graph, nodes=False)
+    min_x, min_y, max_x, max_y = edges.total_bounds
+    pad_x = (max_x - min_x) * 0.02
+    pad_y = (max_y - min_y) * 0.02
+    return box(min_x - pad_x, min_y - pad_y, max_x + pad_x, max_y + pad_y)
+
+
+def _draw_water(axes: Axes, areas, lines, water_color: str) -> None:
+    if areas is not None and not areas.empty:
+        areas.plot(ax=axes, facecolor=water_color, edgecolor="none", zorder=0)
+    if lines is not None and not lines.empty:
         lines.plot(ax=axes, color=water_color, linewidth=WATER_LINE_WIDTH, zorder=0)
 
 
