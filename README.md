@@ -1,30 +1,61 @@
 # Map Background
 
+Create a dark street map from OpenStreetMap. Streets are drawn in grey on a black background, and water is drawn in a muted blue. The image is saved at the pixel size you ask for, 1920x1080 by default.
 
+## Install
 
-The python program creates a black and grey map in a 16:9 aspect ratio of paris. The location can be changed by inputing corrdinates of another place, but for right now it has a preset location
+Python 3.11 or newer.
 
-The program takes quite a long time to execute because it interacts with an external source to pull the map info, it is also very high resolution, so it takes a while to render and crop.
+```bash
+pip install -r requirements.txt
+pip install -e .
+```
 
-requirements.txt contains all dependencies for the program. run `pip install -r requirements.txt` to install them.
+To run the tests as well:
 
-To change what level of detail is used, change the network_type on this line: `G = ox.graph_from_point((lat, lon), dist=radius, network_type='all')`. 
-Here are the options:
-1. 'drive' - Get drivable public streets (but not service roads)
-2. 'drive_service' - Get drivable public streets including service roads
-3. 'walk' - Get all streets and paths that pedestrians can use
-4. 'bike' - Get all streets and paths that cyclists can use
-5. 'all' - Get all non-private streets and paths
-6. 'all_private' - Get all streets and paths, including private ones
+```bash
+pip install -e ".[dev]"
+```
 
-Be careful with the 'all' option, it will take a long time to render.
+## Usage
 
----
+```bash
+map-background --location "Athens, Greece"
+```
 
-At some point I will implement the following features:
-- Color selection
-- Possibly a way to also highlight water features
----
-example:
+The same command works as `python -m map_background --location "Athens, Greece"`.
+
+Coordinates are accepted too. Without `--label`, they are reverse-geocoded to a `City, Country` name:
+
+```bash
+map-background --location "37.9838, 23.7275" --label "Athens, Greece"
+```
+
+A smaller, faster map:
+
+```bash
+map-background --location "Athens, Greece" --radius-km 3 --network-type drive --output athens.png
+```
+
+### Options
+
+- `--location` is a place name or `lat, lon`. It is required.
+- `--radius-km` is the radius in kilometers. The default is 10, which is 10,000 meters. The previous prompt treated a typed number as meters even though it asked for kilometers.
+- `--network-type` is one of `drive`, `drive_service`, `walk`, `bike`, `all`, or `all_private`. The default is `all`, which includes footpaths and service roads. That option is the slowest. `drive` is much faster.
+- `--aspect` accepts `16:9`, `4:3`, `1:1`, or a positive number such as `1.5`. The default is `16:9`.
+- `--width` is the image width in pixels. The default is 1920. Height is the width divided by the aspect ratio, so the default image is 1920x1080.
+- `--background`, `--street-color`, `--water-color`, and `--label-color` take any color Matplotlib accepts. Defaults are `#000000`, `#262626`, `#1b3a4b`, and `#6f6f6f`.
+- `--street-width` is the street line width. The default is 0.4.
+- `--no-water` skips lakes, coastlines, rivers, canals, and streams. Water is included by default.
+- `--label` replaces the corner text. `--no-label` removes it.
+- `--output` is the file to write. The extension chooses the format: `.png` or `.svg`. The default is `map.png`.
+
+Example with custom colors:
+
+```bash
+map-background --location "Venice, Italy" --street-color "#3a3a3a" --water-color "#163044"
+```
+
+OSMnx keeps downloaded data in your user cache directory, so generating the same area again is faster.
+
 ![map](https://github.com/user-attachments/assets/3edd3adb-c42b-4dca-962a-c862ab57d572)
-
